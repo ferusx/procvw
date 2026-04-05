@@ -1,0 +1,118 @@
+.TH PROCVW 1 "April 2026" "procvw 1.0" "FreeBSD General Commands Manual"
+
+.SH NAME
+procvw \- A FreeBSD process viewer with tree, JSON, snapshot, and color support
+
+.SH SYNOPSIS
+.B procvw
+[\-u USER] [\-f FILTER] [\-p PID]
+[\-s {cpu,mem,pid,rss,cmd}] [\-b]
+[\-n NUMBER] [\-\-color]
+[\-\-tree] [\-\-table]
+[\-\-cpu-all] [\-\-cpu-threshold VALUE]
+[\-\-tree-depth N]
+[\-\-json] [\-\-json-view]
+[\-\-load FILE] [\-\-save FILE]
+
+.SH DESCRIPTION
+procvw is a process inspection tool designed for FreeBSD. It supports
+both flat and hierarchical (tree) views of processes, as well as JSON
+export and snapshot loading. Its output can be colored if so wanted.
+
+The tool can operate on live system data or previously saved JSON snapshots.
+
+.SH OPTIONS
+
+.TP
+.B \-u, \-\-user USER
+Filter the processes by user.
+
+.TP
+.B \-f, \-\-filter STRING
+Filter the processes by a command substring.
+
+.TP
+.B \-p, \-\-pid PID
+Filter by specific process ID.
+
+.TP
+.B \-s, \-\-sort {cpu,mem,pid,rss,thr,cmd}
+Sort the processes by CPU, memory, PID, RSS, thread, or command.
+
+.TP
+.B \-b, \-\-bottom
+Reverse sort order (ascending).
+
+.TP
+.B \-n, \-\-number NUMBER
+Limit number of displayed processes or nodes.
+
+.TP
+.B \-\-color
+Enable colored output.
+
+.TP
+.B \-\-tree
+Display process hierarchy as a tree.
+
+.TP
+.B \-\-table
+When loading JSON files with the --load flag, processes can be displayed in
+table format by using this flag.´
+
+.TP
+.B \-\-cpu-all
+Show subtree CPU usage for all nodes.
+
+.TP
+.B \-\-cpu-threshold VALUE
+Only display CPU usage above threshold.
+
+.TP
+.B \-\-depth N
+Limit depth of tree view.
+
+.TP
+.B \-\-json
+Output full process data as JSON.
+
+.TP
+.B \-\-json-view
+Output JSON matching visible tree.
+
+.TP
+.B \-\-save FILE
+Save output to JSON file.
+
+.TP
+.B \-\-load FILE
+Load process data from JSON file instead of live system.
+
+.SH EXAMPLES
+
+.TP
+Show top processes by CPU:
+.B procvw \-s cpu
+
+.TP
+Tree view with color:
+.B procvw \-\-tree \-\-color
+
+.TP
+Save snapshot:
+.B procvw \-\-save snapshot.json
+
+.TP
+Load snapshot:
+.B procvw \-\-load snapshot.json
+
+.TP
+Load and show as table:
+.B procvw \-\-load snapshot.json \-\-table
+
+.SH AUTHOR
+Markus Johnsson a.k.a FerusX.Swe (hedningakjetil@gmail.com).
+
+.SH NOTES
+The tool supports both live process inspection and offline analysis
+via JSON snapshots.
