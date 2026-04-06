@@ -5,94 +5,374 @@ procvw \- A FreeBSD process viewer with tree, JSON, snapshot, and color support
 
 .SH SYNOPSIS
 .B procvw
-[\-u USER] [\-f FILTER] [\-p PID]
-[\-s {cpu,mem,pid,rss,cmd}] [\-b]
-[\-n NUMBER] [\-\-color]
-[\-\-tree] [\-\-table]
-[\-\-cpu-all] [\-\-cpu-threshold VALUE]
-[\-\-tree-depth N]
+[\-\-all] [\-b]
+[-\-charset {ascii,utf8}]
+[\-\-color] [\-\-cpu-all]
+[\-\-cpu-threshold CPU_THRESHOLD]
+[\-f, \-\-cmd_filter CMD_FILTER]
+[\-g, \-\-glyph\-style {1,2,3}]
+[\-w, \-\-line-wrap]
 [\-\-json] [\-\-json-view]
-[\-\-load FILE] [\-\-save FILE]
+[\-\-load FILE_NAME_JSON] [\-\-no\-header]
+[\-n NUMBER]  [\-p PID]
+[\-\-save FILE_NAME_JSON]
+[\-s {cpu,mem,pid,rss,cmd}]
+[\-u USER] [\-\-table]
+[\-\-tree] [\-\-tree-depth N]
+[\-\-show\-path] [\-\-raw]
 
 .SH DESCRIPTION
-procvw is a process inspection tool designed for FreeBSD. It supports
-both flat and hierarchical (tree) views of processes, as well as JSON
-export and snapshot loading. Its output can be colored if so wanted.
+\fIprocvw\fP is a process inspection tool designed for \fBFreeBSD\fP, providing both flat
+and hierarchical views of system processes.
 
-The tool can operate on live system data or previously saved JSON snapshots.
+In its default mode, the tool presents a tabular overview of processes similar
+to traditional utilities such as \fIps(1)\fP, with support for sorting, filtering,
+and limiting output via options such as \fB--sort\fP, \fB--user\fP, and \fB--number\fP.
+
+When used with \fB--tree\fP, \fIprocvw\fP renders processes in a hierarchical structure,
+allowing inspection of parent-child relationships. Additional options such as
+\fB--cpu-all\fP, \fB--tree-depth\fP, and \fB--number\fP can be used to control the level of
+detail and scope of the displayed tree.
+
+The tool supports JSON output through the \fB--json\fP option, producing either a flat
+or hierarchical representation depending on the selected mode. This output can
+be saved to disk using \fB--save\fP and later reloaded with \fB--load\fP, allowing offline
+inspection and reproducible analysis.
+
+Output formatting can be adjusted using options such as \fB--color\fP and \fB--line-wrap\fP,
+while \fB--raw\fP provides a minimal, unformatted output suitable for scripting.
+
+procvw is designed to operate consistently across both live system data and
+previously saved snapshots, ensuring predictable behavior regardless of data
+source.
 
 .SH OPTIONS
 
 .TP
-.B \-u, \-\-user USER
-Filter the processes by user.
+.B \-\-all
+.It Fl -all
+Show all processes, including kernel and idle processes.
 
-.TP
-.B \-f, \-\-filter STRING
-Filter the processes by a command substring.
+By default, \fIprocvw\fP filters out system-level entries such as the
+kernel (PID 0) and idle processes. These entries typically do not
+provide meaningful insight for everyday process inspection and are
+therefore hidden to reduce visual noise.
 
-.TP
-.B \-p, \-\-pid PID
-Filter by specific process ID.
+When this option is specified, all processes are displayed without
+filtering. This includes kernel threads, scheduler entries, and
+idle processes, allowing full visibility into the system's process
+state.
 
-.TP
-.B \-s, \-\-sort {cpu,mem,pid,rss,thr,cmd}
-Sort the processes by CPU, memory, PID, RSS, thread, or command.
+This option is useful for low-level system analysis, debugging,
+and situations where complete process transparency is required.
 
 .TP
 .B \-b, \-\-bottom
-Reverse sort order (ascending).
+.It Fl -bottom
+Reverse the default sorting order of processes.
 
-.TP
-.B \-n, \-\-number NUMBER
-Limit number of displayed processes or nodes.
+By default, \fIprocvw\fP sorts processes in descending order for most
+metrics such as CPU and memory usage, showing the most active or
+resource-intensive processes first.
+
+When this option is specified, the sorting order is reversed,
+displaying the least active or lowest values at the top instead.
+
+For example, when sorting by CPU usage, enabling this flag will
+place processes with minimal or zero CPU consumption first.
+
+When used with command-based sorting, this option reverses the
+default alphabetical order.
+
+This option applies to both table and tree views.
+
+\fBNOTE:\fP when used with \fB--sort\fP cmd, the sort order for the COMMAND
+column will be descending, since it defaults to ascending order.
 
 .TP
 .B \-\-color
-Enable colored output.
+.It Fl -color
+Enable ANSI colorized output for process information.
+
+When this option is specified, \fIprocvw\fP applies color formatting to
+various columns in the output to improve readability and highlight
+important metrics.
+
+The following color scheme is used:
+
+.Bl -bullet
+.It
+\fBPID\fP, \fBMEM\fP, \fBRSS\fP, and \fBTHR\fP columns are displayed in white to maintain
+clear visibility for general numeric values.
+.It
+
+\fBCPU\fP, \fBSTARTED\fP, and \fBTIME\fP columns are rendered in gray, providing a
+neutral tone for activity and timing-related metrics.
+
+.It
+\fBUSER\fP column is displayed in yellow to distinguish process ownership
+from other fields.
+
+.It
+\fBCOMMAND\fP column is shown in cyan to clearly separate executable names
+and paths from numeric data.
+.El
+
+Color output is intended for interactive terminal use and may not
+be suitable for piping or redirection to files. In such cases,
+consider disabling this option or using raw output modes.
+
+This option applies for tree mode as well.
 
 .TP
-.B \-\-tree
-Display process hierarchy as a tree.
+.B \-\-cpu\-all
+Show subtree CPU usage for all processes in tree view.
+
+By default, CPU values are only displayed for processes whose
+aggregated subtree usage exceeds an internal threshold, or for
+top-level nodes. This helps reduce visual noise in large trees.
+
+When this option is specified, CPU usage is shown for every node,
+including those with minimal or zero activity, providing a complete
+view of resource distribution across the entire process hierarchy.
+
+This option is only meaningful when used with tree mode.
 
 .TP
-.B \-\-table
-When loading JSON files with the --load flag, processes can be displayed in
-table format by using this flag.´
+.B \-\-cpu\-threshold
+Display subtree CPU usage only for processes whose aggregated
+CPU consumption meets or exceeds the specified threshold.
+
+The threshold applies to the total CPU usage of a process and all
+of its descendants, allowing selective visibility of nodes that
+contribute meaningfully to overall system load.
+
+Processes with subtree CPU usage below the threshold are shown
+without CPU values, reducing clutter in large trees while still
+preserving structural context.
+
+This option is only effective in tree mode.
 
 .TP
-.B \-\-cpu-all
-Show subtree CPU usage for all nodes.
+.B \-f, \-\-cmd\-filter \fB\fICMD_FILTER\fP
+Filter processes by command name.
+
+Only processes whose command matches the specified pattern are
+included in the output. Matching is performed against the command
+field as displayed in the output, and may include partial matches.
+
+This option is useful for isolating specific applications or services
+within large process lists, allowing focused inspection of relevant
+subsets.
+
+When used in combination with the \fB--tree\fP option, parent processes may still
+be shown to preserve hierarchy if they contain matching descendants.
+
+\fBNOTE:\fP Filtering is applied prior to rendering, and affects both table and
+tree views. In tree mode, non-matching nodes may still appear if they
+from part of the path to a matching process.
 
 .TP
-.B \-\-cpu-threshold VALUE
-Only display CPU usage above threshold.
+.B \-g, \-\-glyph\-style {1,2,3}
+Select the character set used for rendering the process tree.
 
-.TP
-.B \-\-depth N
-Limit depth of tree view.
+Three styles are available: a classic line-based layout, a simplified
+ASCII variant for maximum compatibility, and an enhanced style with
+additional glyphs for improved visual clarity.
+
+\fBNOTE:\fP the ASCII style is recommended for terminals with limited character
+support, while the enhanced style provides a more expressive view on
+modern systems.
 
 .TP
 .B \-\-json
-Output full process data as JSON.
+--json
+Output process data in JSON format.
+
+When used in standard mode, a flat list of processes is produced.
+
+When combined with tree mode, the output preserves hierarchical
+parent-child relationships.
+
+When used with the \fB\fI--load\P option, the stored snapshot is emitted
+in JSON format using the same structure.
 
 .TP
-.B \-\-json-view
-Output JSON matching visible tree.
+.B \-w, \-\-line-wrap
+Allow long COMMAND fields to wrap onto the next line instead of being truncated.
+
+By default, \fIprocvw\fP truncates the COMMAND column to ensure that each process entry
+fits on a single line within the terminal width. This preserves table alignment
+and prevents visual corruption caused by terminal line wrapping.
+
+When this flag is enabled, truncation is disabled and full command paths are
+displayed. If a command exceeds the terminal width, it will wrap onto the next
+line.
+
+This option may reduce readability in dense output but is useful when full
+command visibility is required.
 
 .TP
-.B \-\-save FILE
-Save output to JSON file.
+.B \-\-load \fB\fIFILE_NAME\fP
+Load process data from a previously saved JSON snapshot.
+
+The specified file must contain data produced by the save functionality
+of this tool. When loaded, the snapshot is rendered using the same
+formatting and filtering options as live process data.
+
+By default, loaded data is displayed in tree view. The \fB--table\fP
+option may be used to render the snapshot in table format instead.
 
 .TP
-.B \-\-load FILE
-Load process data from JSON file instead of live system.
+.B \-\-no\-header
+Suppress the column header in the table output.
+
+When specified, column titles and separator lines are omitted,
+leaving only the processes data. This is useful for scripting or
+when piping output to other tools.
+
+.TP
+.B \-n, \-\-number
+Limit the number of processes displayed.
+
+In table mode, this option restricts the output to the first N
+processes after filtering and sorting have been applied.
+
+In tree mode, this option limits the number of visible processes
+based on the selected view. When used with standard tree output,
+it affects which processes are included before rendering.
+
+When used together with JSON tree output, this option limits the
+total number of nodes emitted. The resulting structure may be
+truncated and not represent a complete process hierarchy.
+
+This option is useful for reducing output size when working with
+large process lists or exporting data for inspection.
+
+.TP
+.B \-\-pid
+Display only the process with the specified ID.
+
+When this option is used, the output is limited to the selected
+process. In tree mode, the surrounding hierarchy may be included
+to preserve context within the process tree.
+
+.TP
+.B \-\-save \fB\fIFILE_NAME\fP
+Save the current process snapshot to a JSON file.
+
+The output is written in a structured format suitable for later
+inspection or reuse with the load functionality. The saved data
+captures the process hierarchy and associated metadata at the
+time of execution.
+
+If teh specified filename foes not include a .json extension,
+it is appended automatically.
+
+.TP
+.B \-s, \-\-sort {cpu,mem,pid,rss,thr,cmd}
+Sort processes based on the specified key.
+
+Available options include CPU usage, memory usage, process ID,
+resident memory size, threads, and command name. Sorting is applied
+prior to rendering and affects both table and tree views.
+
+In tree mode, sorting is performed among sibling processes while
+preserving the overall hierarchy.
+
+When sorting by command name, results are ordered in ascending
+alphabetical order by default. This order can be reversed using
+the \fB--bottom\fP option.
+
+.TP
+.B \-u, \-\-user \fB\fIUSER\fP
+Display only processes owned by the specified user.
+
+When this option is used, the output is filtered to include only
+processes associated with the given user account. This applies to
+both table and tree views.
+
+In tree mode, parent processes may still be shown to preserve the
+hierarchical path to matching entries.
+
+.TP
+.B \-\-table
+Display process data in a flat table format.
+
+When used, the hierarchical tree view is disabled and processes
+are presented as a sorted list with column-based output. This
+mode is the default for live process inspection.
+
+When loading a snapshot, table view can be explicitly requested
+to override the default tree representation.
+
+.TP
+.B \-\-tree
+Display processes in a hierarchical tree view.
+
+In this mode, processes are organized according to their parent-child
+relationships, providing a structured view of the system. Each node
+represents a process, with indentation indicating its position within
+the hierarchy.
+
+Sorting, filtering, and CPU display options are applied within the
+tree while preserving the overall structure. By default, only selected
+CPU values are shown to reduce visual noise.
+
+This mode is enabled automatically when loading a snapshot, unless
+overridden by the \fB--table\fP option.
+
+.TP
+.B \-\-tree\-depth \fITREE_DEPTH\fP
+Limit the depth of the process tree.
+
+Only processes up to the specified depth are displayed, where the
+top-level processes are considered depth one. Deeper levels of the
+hierarchy are omitted, allowing focused inspection of higher-level
+relationships.
+
+This option applies only in tree mode.
+
+.TP
+.B \-\-show\-path
+Display the full command, including executable path and arguments.
+
+By default, only the command name is shown. When this option is
+enabled, the complete command line is displayed, providing additional
+context such as invocation parameters and execution paths.
+
+This option is intended for use with tree mode.
+
+.TP
+.B \-\-raw
+Display raw process data without formatting.
+
+When enabled, output is presented without column alignment, color,
+or additional formatting, showing values in their unmodified form.
+This mode is intended for scripting, debugging, or inspection of
+the underlying data as retrieved from the system.
+
+This option applies to table output.
+
+\fBNOTE:\fP This option disables all formatting, including color output.
+It cannot be used together with the --color flag.
+
+.SH NOTES
+The tree view reflects parent-child relationships as reported by
+the system and may vary depending on process state and timing.
+
+CPU values shown in tree mode represent aggregated usage across
+a process and its descendants, and are intended for relative
+inspection rather than precise measurement.
+
+Snapshot files are only guaranteed to be compatible when generated
+by this tool.
 
 .SH EXAMPLES
 
 .TP
 Show top processes by CPU:
-.B procvw \-s cpu
+.B procvw \-\-sort cpu
 
 .TP
 Tree view with color:
@@ -110,9 +390,15 @@ Load snapshot:
 Load and show as table:
 .B procvw \-\-load snapshot.json \-\-table
 
+.TP
+
+.B
+
 .SH AUTHOR
 Markus Johnsson a.k.a FerusX.Swe (hedningakjetil@gmail.com).
 
-.SH NOTES
-The tool supports both live process inspection and offline analysis
-via JSON snapshots.
+.SH SEE ALSO
+ps(1), top(1), tree(1)
+
+Designed for clarity and inspection of process hierarchies on
+FreeBSD systems.
