@@ -1,0 +1,10 @@
+procvw is a lightweight BSD process viewer designed in the spirit of
+traditional UNIX tools.
+
+It provides a clear and structured view of running processes through
+multiple output modes, including a clean tabular layout, a hierarchical
+tree view, and JSON export for further processing. Colored output is
+available.
+
+The tool emphasizes readability, consistent behavior, and minimal
+overhead, making it suitable for interactive use but also for scripting.

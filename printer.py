@@ -1,22 +1,7 @@
 # printer.py
 
-"""
-    procvw is a process viewer developed for FreeBSD.
-    Copyright (C) 2026  Markus Johnsson a.k.a. FerusX.Swe
-    All rights reserved.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    For the GNU General Public License, see <https://www.gnu.org/licenses/>.
-"""
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026 Markus Johnsson
 
 from typing import List
 
@@ -25,10 +10,13 @@ from typing import List
 # =========================================================
 class ProcessPrinter:
     """
-    Responsible for outputting formatted lines to the terminal.
+    Output handler for procvw.
 
-    This is the final stage in the processing pipeline, taking already
-    formatted text and sending it to standard output.
+    This class represents the final stage in the processing pipeline,
+    responsible for emitting fully formatted lines to standard output.
+
+    It performs no formatting or transformation — all input is assumed
+    to be ready for display.
     """
 
     # --------------------------------------------------------------------
@@ -37,11 +25,17 @@ class ProcessPrinter:
     @staticmethod
     def print(lines: List[str]):
         """
-        Print each line to standard output.
+        Write formatted output lines to standard output.
 
         Args:
             lines (List[str]):
-                Formatted lines produced by a formatter.
+                Pre-formatted lines produced by a formatter.
+
+        Notes:
+            - Each line is printed as-is, preserving alignment,
+              color codes, and layout.
+            - This method intentionally avoids any additional
+              processing to keep output behavior predictable.
         """
         for line in lines:
             print(line)

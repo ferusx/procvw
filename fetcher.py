@@ -1,22 +1,7 @@
 # fetcher.py
 
-"""
-    procvw is a process viewer developed for FreeBSD.
-    Copyright (C) 2026  Markus Johnsson a.k.a. FerusX.Swe
-    All rights reserved.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    For the GNU General Public License, see <https://www.gnu.org/licenses/>.
-"""
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026 Markus Johnsson
 
 import subprocess
 from typing import List
@@ -43,24 +28,44 @@ class ProcessFetcher:
     @staticmethod
     def fetch(args) -> List[ProcessInfo]:
         """
-        Executes the `ps` command and parses its output into ProcessInfo objects.
+        Retrieve live process data from the system using `ps`.
+
+        This function executes a BSD-compatible `ps` command and converts
+        its output into structured ProcessInfo objects. It serves as the
+        entry point for all live data used by the application.
+
+        The parser relies on fixed column ordering and reconstructs fields
+        that may contain spaces, such as the start time (`lstart`) and the
+        full command string.
+
+        Behavior:
+
+            - Executes `ps` with extended width (`-ww`) to avoid truncation
+            - Skips the header line automatically
+            - Parses each row into strongly-typed ProcessInfo objects
+            - Silently skips malformed lines to ensure robustness
+
+        Args:
+            args:
+                Parsed CLI arguments (currently unused, reserved for future use)
 
         Returns:
-            List[ProcessInfo]: List of all processes retrieved from the system
+            List[ProcessInfo]:
+                List of all processes retrieved from the system.
 
         Notes:
-            - Relies on fixed column positions from the `ps` output
-            - Uses manual splitting to reconstruct multi-field values
-              such as start time and command
-            - Silently skips malformed lines
+
+            - Assumes BSD-style `ps` output formatting
+            - `comm` provides a short executable name (normalized)
+            - `command` contains the full command including arguments
+            - Parsing is position-based and therefore sensitive to changes
+              in the `ps` output format
         """
 
-        if args.show_path:
-            cmd = "ps -ww -axo pid,ppid,user,state,%cpu,%mem,rss,lstart,time,nlwp,command"
-        else:
-            cmd = "ps -ww -axo pid,ppid,user,state,%cpu,%mem,rss,lstart,time,nlwp,comm"
+        # Use wide output (-ww) and fixed column order for predictable parsing
+        cmd = "ps -ww -axo pid,ppid,user,state,%cpu,%mem,rss,lstart,time,nlwp,comm,command"
 
-        output = subprocess.check_output(cmd, shell=True, text=True)
+        output = subprocess.check_output(cmd.split(), text=True)
 
         # We skip the header line
         lines = output.strip().split("\n")[1:]
@@ -69,7 +74,7 @@ class ProcessFetcher:
 
         for line in lines:
             try:
-                # Split into columns (lstart and command require reconstruction)
+                # Split into fields (lstart and command require reconstruction)
                 parts = line.split()
 
                 pid = int(parts[0])
@@ -81,14 +86,20 @@ class ProcessFetcher:
                 rss_kb = int(parts[6])
                 rss_mb = rss_kb / 1024
 
-                # lstart = 5 fields: "Thu Apr  2 17:06:03 2026"
-                started = " ".join(parts[7:11])
+                # Reconstruct lstart (5 fields: weekday, month, day, time, year)
+                started = " ".join(parts[7:12])
 
                 time = parts[12]
                 threads = int(parts[13])
 
-                # command may contain spaces → join remaining parts
-                command = " ".join(parts[14:])
+                comm = parts[14]
+
+                # Normalize kernel processes (remove surrounding brackets)
+                if comm.startswith("[") and comm.endswith("]"):
+                    comm = comm[1:-1]
+
+                # Reconstruct full command (may contain spaces and arguments)
+                command = " ".join(parts[15:])
 
                 processes.append(
                     ProcessInfo(
@@ -102,12 +113,13 @@ class ProcessFetcher:
                         started=started,
                         time=time,
                         threads=threads,
+                        comm=comm,
                         command=command
                     )
                 )
 
             except ValueError:
-                # Skip malformed or unexpected lines safely
+                # Skip malformed lines without interrupting execution
                 continue
 
         return processes

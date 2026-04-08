@@ -1,22 +1,7 @@
 # filters.py
 
-"""
-    procvw is a process viewer developed for FreeBSD.
-    Copyright (C) 2026  Markus Johnsson a.k.a. FerusX.Swe
-    All rights reserved.
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    For the GNU General Public License, see <https://www.gnu.org/licenses/>.
-"""
+# SPDX-License-Identifier: BSD-3-Clause
+# Copyright (c) 2026 Markus Johnsson
 
 from typing import List
 from models import ProcessInfo
@@ -73,11 +58,14 @@ class ProcessFilter:
 
         # Filter
         if args.cmd_filter:
-            result = [p for p in result if args.cmd_filter.lower() in p.command.lower()]
+            filters = [f.lower() for f in args.cmd_filter]
 
-        # ---------------------------------------
+            result = [
+                p for p in result
+                if any(f in (p.command or "").lower() for f in filters)
+            ]
+
         # Hide kernel processes (Default)
-        # ---------------------------------------
         if not args.all:
             result = [
                 p for p in result
@@ -128,21 +116,75 @@ class ProcessSorter:
             - Sorting is stable and uses Python's built-in sorted()
         """
 
+        def stat_key(p):
+            """
+            Map a process STAT value to a sortable priority.
+
+            The STAT field from ps(1) contains a primary process state along
+            with optional modifier flags (e.g. "S", "Ss", "R+", "I<").
+
+            For sorting purposes, only the primary state (first character) is
+            considered. This function translates that state into a numeric
+            priority to ensure consistent and meaningful ordering.
+
+            Priority order (default):
+
+                R   Running processes
+                D   Uninterruptible sleep (I/O wait)
+                S   Sleeping
+                I   Idle / kernel threads
+                T   Stopped or traced
+                Z   Zombie processes
+
+            Any unrecognized or uncommon states are placed at the end.
+
+            This mapping aligns table sorting with tree mode behavior, ensuring
+            consistent output across different views.
+
+            Args:
+                p (ProcessInfo):
+                    Process entry containing the STAT field.
+
+            Returns:
+                int:
+                    Numeric priority representing the process state.
+                    Lower values indicate higher priority in ascending order.
+
+            Note:
+                Modifier flags (e.g. "+", "s", "<") are ignored for sorting.
+            """
+            state = (p.stat or "")[:1]
+
+            priority = {
+                "R": 0,
+                "D": 1,
+                "S": 2,
+                "I": 3,
+                "T": 4,
+                "Z": 5
+            }
+
+            return priority.get(state, 99)
+
         # Map CLI sort options to corresponding process attributes
         key_map = {
+            "stat": stat_key,
             "cpu": lambda p: p.cpu,
             "mem": lambda p: p.mem,
             "pid": lambda p: p.pid,
             "rss": lambda p: p.rss_mb,
             "thr": lambda p: p.threads,
-            "cmd": lambda p: (p.command or "").lower()
+            "cmd": lambda p: (p.comm or "").lower()
         }
 
         # Select sorting function (default: CPU)
         key_func = key_map.get(args.sort, key_map["cpu"])
 
-        # Sort commands in ascending order
-        if args.sort == "cmd":
+        # Sort behavior
+        # - cmd is alphabetical (ascending by default)
+        # - numeric/categorical priority sorts (cpu, mem, pid, stat, etc.)
+        #   are descending by default
+        if args.sort in "cmd":
             reverse = args.bottom  # allow reversing for command
         else:
             # Reverse determines descending vs ascending order
