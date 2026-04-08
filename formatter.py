@@ -162,8 +162,7 @@ class ProcessFormatter:
 
             # Filter out the idle kernel process unless explicitly requested
             cmd = p.command.strip().lower().strip("[]")
-            if "idle" in p.command.lower():
-                print("FILTER CHECK:", p.pid, p.command)
+ 
             if not args.all:
                 if cmd == "idle":
                     continue
