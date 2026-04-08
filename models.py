@@ -12,7 +12,7 @@ from typing import List, TypedDict
 @dataclass
 class ProcessInfo:
     """
-    Represents a single process as seen by procvw.
+    Represents a single process as seen by procvw.py.
 
     Think of this as the “snapshot” of a process at the moment it was
     observed. Each instance holds everything the application needs to
@@ -104,7 +104,7 @@ class ProcessNode(TypedDict):
     position in the hierarchy and its relationship to other processes.
 
     Each node mirrors a ProcessInfo entry but adds structural context,
-    allowing procvw to build and traverse a full parent/child tree.
+    allowing procvw.py to build and traverse a full parent/child tree.
 
     This structure is primarily used for:
         - Tree rendering (ProcessTreeFormatter)

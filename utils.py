@@ -384,7 +384,7 @@ def load_json_processes(path):
 
     This function bridges stored data back into the live processing pipeline.
     It supports both flat and hierarchical (tree-based) JSON formats, allowing
-    procvw to seamlessly reload previously captured process states.
+    procvw.py to seamlessly reload previously captured process states.
 
     Behavior:
 

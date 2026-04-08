@@ -51,7 +51,7 @@ class ProcessFormatter:
     Context:
 
         This formatter powers the standard table view — the first thing
-        most users see when running procvw. Because of that, it aims to
+        most users see when running procvw.py. Because of that, it aims to
         feel familiar, stable, and consistent with traditional UNIX tools
         like ps and top.
     """

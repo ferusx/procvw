@@ -10,7 +10,7 @@ from typing import List
 # =========================================================
 class ProcessPrinter:
     """
-    Output handler for procvw.
+    Output handler for procvw.py.
 
     This class represents the final stage in the processing pipeline,
     responsible for emitting fully formatted lines to standard output.

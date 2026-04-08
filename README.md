@@ -21,34 +21,34 @@ tree view, and JSON export for further processing.
 
 ```bash
 # Basic process view
-procvw
+procvw.py
 
 # Tree view
-procvw --tree
+procvw.py --tree
 
 # Sort by CPU
-procvw -s cpu
+procvw.py -s cpu
 
 # Sort by process state
-procvw -s stat
+procvw.py -s stat
 
 # Limit output
-procvw -n 10
+procvw.py -n 10
 
 # Show full command paths
-procvw --show-path
+procvw.py --show-path
 
 # Tree with depth limit
-procvw --tree --tree-depth 2
+procvw.py --tree --tree-depth 2
 
 # Show subtree CPU
-procvw --tree --cpu-all
+procvw.py --tree --cpu-all
 
 # Export to JSON
-procvw --tree --json > processes.json
+procvw.py --tree --json > processes.json
 
 # Load from JSON
-procvw --load processes.json --table
+procvw.py --load processes.json --table
 ```
 
 ## Options
