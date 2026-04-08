@@ -100,6 +100,12 @@ procvw --load processes.json --table
 
 ---
 
+## Installation
+
+```bash
+pkg install procvw
+```
+
 ## Design Philosophy
 
 procvw is built with a focus on clarity, correctness, and simplicity.
