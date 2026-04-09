@@ -3,6 +3,14 @@
 # SPDX-License-Identifier: BSD-3-Clause
 # Copyright (c) 2026 Markus Johnsson
 
+import os
+import sys
+
+BASE_DIR = os.path.dirname(os.path.realpath(__file__))
+LIBEXEC_DIR = os.path.join(BASE_DIR, "..", "libexec", "procvw")
+
+if LIBEXEC_DIR not in sys.path:
+    sys.path.insert(0, LIBEXEC_DIR)
 
 import argparse
 import sys
